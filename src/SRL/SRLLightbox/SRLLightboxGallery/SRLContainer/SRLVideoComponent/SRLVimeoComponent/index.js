@@ -18,7 +18,6 @@ export default function SRLVimeoComponent({
       const response = await fetch(
         `https://vimeo.com/api/oembed.json?url=${src}&width=${width}&height=${height}&autoplay=${autoplay}&controls=${controls}&muted=${muted}`
       ).catch((e) => {
-        console.log(e)
         throw e
       })
       const data = await response.json()

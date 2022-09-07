@@ -85,7 +85,6 @@ const SRLWrapper = ({
       // User is declaring images via prop
       else {
         if (elements) {
-          console.log(elements);
           handleElementsPassedViaProps(elements)
         }
       }
@@ -116,7 +115,6 @@ const SRLWrapper = ({
           }
         })
         .filter((e) => e && !e.src)
-      console.log("elements", elements);
       // Function that handle the lightbox
       return handleLightBox(elements)
     }

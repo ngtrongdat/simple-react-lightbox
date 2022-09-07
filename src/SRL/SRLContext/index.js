@@ -115,7 +115,6 @@ const SRLCtx = React.createContext(initialState)
 const SRLContextComponent = (props) => {
   // Reducer
   const reducer = (state, action) => {
-    console.log("state.elements", state.elements);
     switch (action.type) {
       case READY_LIGHTBOX:
         return {
