@@ -7,14 +7,18 @@ import {
   RESET_LIGHTBOX,
   HANDLE_ELEMENT
 } from '../SRLContext/actions'
-import { GALLERY_IMAGE, IMAGE } from './element_types'
+import { GALLERY_IMAGE, IMAGE, VIDEO, EMBED_VIDEO } from './element_types'
 import { dispatchError } from '../SRLErrors'
 import { handleAttachListener } from './utils'
 import {
   isSimpleImage,
   isGatsbyGalleryImage,
   isGalleryImage,
-  isImageByUser
+  isImageByUser,
+  isImageWithVideo,
+  isVideo,
+  isEmbedVideo,
+  isEmbedVideoByUser
 } from './detect_types'
 // IsEqual from lodash to do a deep comparison of the objects
 import { isEqual, isEmpty } from 'lodash'
@@ -25,7 +29,8 @@ const SRLWrapper = ({
   elements,
   children,
   defaultOptions,
-  defaultCallbacks
+  defaultCallbacks,
+  customCaptions
 }) => {
   // Imports the context
   const context = useContext(SRLCtx)
@@ -62,9 +67,9 @@ const SRLWrapper = ({
       if (!array) {
         return
       }
-
-      // Grabs images inside the ref
-      const collectedElements = array.querySelectorAll('img')
+      
+      // Grabs images and videos inside the ref
+      const collectedElements = array.querySelectorAll('img,video')
       // Checks if the are elements in the DOM
       if (collectedElements.length > 0) {
         if (!context.isLoaded) {
@@ -80,6 +85,7 @@ const SRLWrapper = ({
       // User is declaring images via prop
       else {
         if (elements) {
+          console.log(elements);
           handleElementsPassedViaProps(elements)
         }
       }
@@ -89,7 +95,15 @@ const SRLWrapper = ({
     function handleElementsPassedViaProps(array) {
       const elements = array
         .map((e, index) => {
-          if (isImageByUser(e)) {
+          if (isEmbedVideoByUser(e)) {
+            return {
+              id: index + '',
+              source: e.src || null,
+              caption: e.caption || null,
+              thumbnail: e.thumbnail || e.src || null,
+              type: 'embed_video'
+            }
+          } else if (isImageByUser(e)) {
             return {
               id: index + '',
               source: e.src || null,
@@ -102,7 +116,7 @@ const SRLWrapper = ({
           }
         })
         .filter((e) => e && !e.src)
-
+      console.log("elements", elements);
       // Function that handle the lightbox
       return handleLightBox(elements)
     }
@@ -234,8 +248,50 @@ const SRLWrapper = ({
                   height: null,
                   type: 'gallery_image'
                 }
-
                 handleAttachListener(e, element, handleElement)
+                return element
+              }
+              case VIDEO: {
+                const element = {
+                  id: e.getAttribute('srl_elementid'),
+                  source: e.currentSrc || e.src,
+                  caption: e.getAttribute('srl_video_caption'),
+                  thumbnail: e.getAttribute('srl_video_thumbnail'),
+                  width: e.getAttribute('srl_video_width'),
+                  showControls:
+                    e.getAttribute('srl_video_controls') == 'true',
+                  videoAutoplay:
+                    e.getAttribute('srl_video_autoplay') == 'true',
+                  muted: e.getAttribute('srl_video_muted') == 'true',
+                  type: 'video'
+                }
+                handleAttachListener(e, element)
+                return element
+              }
+              case EMBED_VIDEO: {
+                const element = {
+                  id: e.getAttribute('srl_elementid'),
+                  source:
+                    e.parentElement.href ||
+                    e.offsetParent.parentElement.href ||
+                    null,
+                  caption: e.parentElement.getAttribute('srl_video_caption'),
+                  thumbnail:
+                    e.parentElement.getAttribute('srl_video_thumbnail') ||
+                    e.currentSrc ||
+                    e.src,
+                  width: e.parentElement.getAttribute('srl_video_width'),
+                  showControls:
+                    e.parentElement.getAttribute('srl_video_controls') ==
+                    'true',
+                  videoAutoplay:
+                    e.parentElement.getAttribute('srl_video_autoplay') ==
+                    'true',
+                  muted:
+                    e.parentElement.getAttribute('srl_video_muted') == 'true',
+                  type: 'embed_video'
+                }
+                handleAttachListener(e, element)
                 return element
               }
               default: {
@@ -251,7 +307,13 @@ const SRLWrapper = ({
     }
 
     /* DISPATCH AN ACTION TO GRAB ALL THE ELEMENTS AND THE SETTINGS AND READY THE LIGHTBOX */
-    function dispatchLightboxReady(options, callbacks, elements) {
+    function dispatchLightboxReady(
+      options,
+      callbacks,
+      customCaptions,
+      elements
+    ) {
+      console.log("ready elements", elements);
       let _options = {}
       let _callbacks = {}
 
@@ -272,6 +334,12 @@ const SRLWrapper = ({
           },
           progressBar: {
             ...defaultOptions.progressBar
+          },
+          translations: {
+            ...defaultOptions.translations
+          },
+          icons: {
+            ...defaultOptions.icons
           }
         }
       } else {
@@ -297,6 +365,14 @@ const SRLWrapper = ({
           progressBar: {
             ...defaultOptions.progressBar,
             ...options.progressBar
+          },
+          translations: {
+            ...defaultOptions.translations,
+            ...options.translations
+          },
+          icons: {
+            ...defaultOptions.icons,
+            ...options.icons
           }
         }
       }
@@ -309,7 +385,8 @@ const SRLWrapper = ({
 
       const mergedSettings = {
         options: { ..._options },
-        callbacks: { ..._callbacks }
+        callbacks: { ..._callbacks },
+        customCaptions: [...customCaptions]
       }
 
       if (
@@ -336,7 +413,7 @@ const SRLWrapper = ({
     function handleLightBox(elements) {
       // Dispatch the actions to grab settings and elements
       // console.log('light-box is initialized')
-      return dispatchLightboxReady(options, callbacks, elements)
+      return dispatchLightboxReady(options, callbacks, customCaptions, elements)
     }
 
     /* DETECTS IF THERE ARE MUTATIONS IN THE REF  */
@@ -433,6 +510,28 @@ SRLWrapper.propTypes = {
       fillColor: PropTypes.string,
       height: PropTypes.string,
       showProgressBar: PropTypes.bool
+    }),
+    translations: PropTypes.shape({
+      autoplayText: PropTypes.string,
+      closeText: PropTypes.string,
+      downloadText: PropTypes.string,
+      fullscreenText: PropTypes.string,
+      nextText: PropTypes.string,
+      pauseText: PropTypes.string,
+      previousText: PropTypes.string,
+      thumbnailsText: PropTypes.string,
+      zoomOutText: PropTypes.string
+    }),
+    icons: PropTypes.shape({
+      autoplayIcons: PropTypes.string,
+      closeIcons: PropTypes.string,
+      downloadIcons: PropTypes.string,
+      fullscreenIcons: PropTypes.string,
+      nextIcons: PropTypes.string,
+      pauseIcons: PropTypes.string,
+      previousIcons: PropTypes.string,
+      thumbnailsIcons: PropTypes.string,
+      zoomOutIcons: PropTypes.string
     })
   }),
   defaultCallbacks: PropTypes.shape({
@@ -447,7 +546,9 @@ SRLWrapper.propTypes = {
   ]),
   options: PropTypes.object,
   callbacks: PropTypes.object,
-  elements: PropTypes.array
+  elements: PropTypes.array,
+  images: PropTypes.array,
+  customCaptions: PropTypes.array
 }
 
 SRLWrapper.defaultProps = {
@@ -509,6 +610,28 @@ SRLWrapper.defaultProps = {
       fillColor: '#000000',
       height: '3px',
       showProgressBar: true
+    },
+    translations: {
+      autoplayText: 'Play',
+      closeText: 'Close',
+      downloadText: 'Download',
+      fullscreenText: 'Full screen',
+      nextText: 'Next',
+      pauseText: 'Pause',
+      previousText: 'Previous',
+      thumbnailsText: 'Hide thumbnails',
+      zoomOutText: 'Zoom Out'
+    },
+    icons: {
+      autoplayIcon: null,
+      closeIcon: null,
+      downloadIcon: null,
+      fullscreenIcon: null,
+      nextIcon: null,
+      pauseIcon: null,
+      previousIcon: null,
+      thumbnailsIcon: null,
+      zoomOutIcon: null
     }
   },
   defaultCallbacks: {
@@ -516,5 +639,6 @@ SRLWrapper.defaultProps = {
     onSlideChange: () => {},
     onLightboxClosed: () => {},
     onLightboxOpened: () => {}
-  }
+  },
+  customCaptions: [{}]
 }

@@ -69,6 +69,28 @@ const initialState = {
       fillColor: '#000000',
       height: '3px',
       showProgressBar: true
+    },
+    translations: {
+      autoplayText: 'Play',
+      closeText: 'Close',
+      downloadText: 'Download',
+      fullscreenText: 'Full screen',
+      nextText: 'Next',
+      pauseText: 'Pause',
+      previousText: 'Previous',
+      thumbnailsText: 'Hide thumbnails',
+      zoomOutText: 'Zoom Out'
+    },
+    icons: {
+      autoplayIcon: null,
+      closeIcon: null,
+      downloadIcon: null,
+      fullscreenIcon: null,
+      nextIcon: null,
+      pauseIcon: null,
+      previousIcon: null,
+      thumbnailsIcon: null,
+      zoomOutIcon: null
     }
   },
   selectedElement: {
@@ -84,7 +106,8 @@ const initialState = {
     onSlideChange: () => {},
     onLightboxClosed: () => {},
     onLightboxOpened: () => {}
-  }
+  },
+  customCaptions: [{}]
 }
 
 const SRLCtx = React.createContext(initialState)
@@ -92,6 +115,7 @@ const SRLCtx = React.createContext(initialState)
 const SRLContextComponent = (props) => {
   // Reducer
   const reducer = (state, action) => {
+    console.log("state.elements", state.elements);
     switch (action.type) {
       case READY_LIGHTBOX:
         return {
