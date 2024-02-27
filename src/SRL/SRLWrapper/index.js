@@ -67,7 +67,7 @@ const SRLWrapper = ({
       if (!array) {
         return
       }
-      
+
       // Grabs images and videos inside the ref
       const collectedElements = array.querySelectorAll('img,video')
       // Checks if the are elements in the DOM
@@ -100,7 +100,8 @@ const SRLWrapper = ({
               source: e.src || null,
               caption: e.caption || null,
               thumbnail: e.thumbnail || e.src || null,
-              type: 'embed_video'
+              type: 'embed_video',
+              download: e.download || null
             }
           } else if (isImageByUser(e)) {
             return {
@@ -108,7 +109,8 @@ const SRLWrapper = ({
               source: e.src || null,
               caption: e.caption || null,
               thumbnail: e.thumbnail || e.src || null,
-              type: 'image'
+              type: 'image',
+              download: e.download || null
             }
           } else {
             return undefined
@@ -256,10 +258,8 @@ const SRLWrapper = ({
                   caption: e.getAttribute('srl_video_caption'),
                   thumbnail: e.getAttribute('srl_video_thumbnail'),
                   width: e.getAttribute('srl_video_width'),
-                  showControls:
-                    e.getAttribute('srl_video_controls') == 'true',
-                  videoAutoplay:
-                    e.getAttribute('srl_video_autoplay') == 'true',
+                  showControls: e.getAttribute('srl_video_controls') == 'true',
+                  videoAutoplay: e.getAttribute('srl_video_autoplay') == 'true',
                   muted: e.getAttribute('srl_video_muted') == 'true',
                   type: 'video'
                 }
@@ -311,7 +311,7 @@ const SRLWrapper = ({
       customCaptions,
       elements
     ) {
-      console.log("ready elements", elements);
+      console.log('ready elements', elements)
       let _options = {}
       let _callbacks = {}
 

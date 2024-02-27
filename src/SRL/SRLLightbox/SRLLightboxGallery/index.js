@@ -212,12 +212,14 @@ const SRLLightboxGallery = ({
       )
 
   function handleImageDownload() {
-    toDataURL(selectedElement.source).then((dataUrl) => {
-      const a = document.createElement('a')
-      a.href = dataUrl
-      a.download = `${ctx.options.settings.downloadedFileName}-${selectedElement.id}`
-      a.click()
-    })
+    toDataURL(selectedElement.download || selectedElement.source).then(
+      (dataUrl) => {
+        const a = document.createElement('a')
+        a.href = dataUrl
+        a.download = `${ctx.options.settings.downloadedFileName}-${selectedElement.id}`
+        a.click()
+      }
+    )
   }
 
   // Handle Current Element
